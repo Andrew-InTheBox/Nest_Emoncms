@@ -4,6 +4,9 @@ import sys, string
 import httplib2
 import requests
 import json
+import time
+import datetime
+import Adafruit_DHT
 
 # Nest API auth token.
 # See here for details: https://developer.nest.com/documentation/cloud/how-to-auth
@@ -31,6 +34,13 @@ nodeid = 0
 # Define HTTP connection to emoncms host.
 emoncmsconn = httplib2.Http()
 
+# Type of sensor, can be Adafruit_DHT.DHT11, Adafruit_DHT.DHT22, or Adafruit_DHT.AM2302.
+DHT_TYPE = Adafruit_DHT.DHT22
+
+# Example of sensor connected to Raspberry Pi pin 23
+DHT_PIN  = 4
+
+
 try:
   # Read in json from Nest API - Your Nest API token goes here after devices?auth=
   r = requests.get('https://developer-api.nest.com/devices?auth='+nestauthtoken)
@@ -44,22 +54,19 @@ else:
   # Assign temperature and humidity values to new variables.
   temp = data['thermostats'][nestdeviceid]['ambient_temperature_f']
   humidity = data['thermostats'][nestdeviceid]['humidity']
+  DHThumidity, DHTtemperature = Adafruit_DHT.read_retry(DHT_TYPE, DHT_PIN)
 
   try:
-    # Send to emoncms.  
-    print ("Send data to EmonCMS")
-    # Send temp value to feed.
-    resp, content = emoncmsconn.request(emoncmshost+"/input/post.json?apikey="+emoncmsapikey+"&node="+str(nodeid)+"&json={AmbientTempF:"+str(temp)+"}")
-    #response = emoncmsconn.getresponse()
-    print (resp)
-    #print (response.status, response.reason)
-    #emoncmsconn.close()
-    # Send humidity value to feed.
-    resp, content = emoncmsconn.request(emoncmshost+"/input/post.json?apikey="+emoncmsapikey+"&node="+str(nodeid)+"&json={Humidity:"+str(humidity)+"}")
-    #response = emoncmsconn.getresponse()
-    print (resp)
-    #print (response.status, response.reason)
-    #emoncmsconn.close()
+# Send to emoncms.  
+   print ("Send data to EmonCMS")
+   resp, content = emoncmsconn.request(emoncmshost+"/input/post.json?apikey="+emoncmsapikey+"&node="+str(nodeid)+"&json={AmbientTempF:"+str(temp)+"}")
+   print (resp)
+   resp, content = emoncmsconn.request(emoncmshost+"/input/post.json?apikey="+emoncmsapikey+"&node="+str(nodeid)+"&json={DHT22_TempF:"+str(DHTtemperature)+"}")
+   print (resp)
+   resp, content = emoncmsconn.request(emoncmshost+"/input/post.json?apikey="+emoncmsapikey+"&node="+str(nodeid)+"&json={Humidity:"+str(humidity)+"}")
+   print (resp)
+   resp, content = emoncmsconn.request(emoncmshost+"/input/post.json?apikey="+emoncmsapikey+"&node="+str(nodeid)+"&json={DHT22_Humidity:"+str(DHThumidity)+"}")
+   print (resp)
   except ValueError:
-    print ("Error sending to emoncms.")
-    print (msg)
+   print ("Error sending to emoncms.")
+   print (msg)
