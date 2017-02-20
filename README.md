@@ -11,3 +11,5 @@ See below for more information:
 https://emoncms.org/
 
 https://openenergymonitor.org/
+
+I run the script from /usr/local/bin as a cron job every 3 minutes, running it more frequently than once every few seconds may produce unexpected behavior.
